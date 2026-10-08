@@ -34,8 +34,14 @@ func main() {
 	u.age = 26
 	bday(&user)
 	fmt.Println(u.age)
+	user.birthday()
+	fmt.Println(u.age)
 }
 
 func bday(user *User) {
 	user.age++
+}
+
+func (user *User) birthday() {
+	user.age++;
 }
