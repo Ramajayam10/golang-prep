@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"api/model"
-	"log"
 )
 
 type UserRepository struct {
@@ -31,8 +30,9 @@ func (u *UserRepository) CreateUser(user *model.User) error {
 
 func (u *UserRepository) GetAllUsers() ([]model.User, error) {
 	query := `
-		SELECT id, name, email, bio, created_at, updated_at, is_active from users 
-		ORDER BY created_at DESC WHERE is_active = true
+		SELECT id, name, email, bio, created_at, updated_at, is_active from users
+		WHERE is_active = true
+		ORDER BY created_at DESC
 	`
 	users := []model.User{}
 	rows, err := u.db.Query(query)
@@ -68,7 +68,6 @@ func (u *UserRepository) GetUserById(id string) (model.User, error) {
 		where id = $1
 	`
 	var user model.User
-	log.Println(id, "###id###")
 	row := u.db.QueryRow(query, id)
 	if err := row.Scan(
 		&user.ID,

@@ -50,6 +50,7 @@ func (h *UserHandler) GetAllUsers (c *gin.Context) {
 	users, err := h.userRepo.GetAllUsers()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+		log.Println(err)
 		return
 	}
 
@@ -60,7 +61,6 @@ func (h *UserHandler) GetUserById (c *gin.Context) {
 	id := c.Param("id")
 
 	user, err := h.userRepo.GetUserById(id)
-	log.Println(err)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})

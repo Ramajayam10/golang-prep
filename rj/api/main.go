@@ -1,13 +1,14 @@
 package main
 
 import (
+	"api/handler"
+	"api/middleware"
+	"api/repository"
+	"database/sql"
 	"log"
+	"os"
 	"github.com/gin-gonic/gin"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"database/sql"
-	"api/handler"
-	"api/repository"
-	"os"
 )
 
 func main() {
@@ -34,10 +35,17 @@ func main() {
 
 	router := gin.Default()
 
+	router.Use(middleware.ReqIdMiddleware())
+	router.Use(middleware.LoggerMiddleware())
+	router.Use(middleware.RecoveryMiddleware())
+	// router.Group()
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "ok",
 		})
+	})
+	router.GET("/panic", func(c *gin.Context) {
+    	panic("test panic")
 	})
 
 	userRepo := repository.NewUserRepository(db)
