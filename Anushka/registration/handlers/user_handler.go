@@ -12,8 +12,8 @@ import (
 func Welcome(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message":         "Welcome to the User Registration Portal!",
-		"instructions":    "Submit a POST request with name, email, and age to register.",
-		"required_fields": []string{"name", "email", "age"},
+		"instructions":    "Submit a POST request with name, email, age, and password to register.",
+		"required_fields": []string{"name", "email", "age", "password"},
 	})
 }
 
@@ -27,11 +27,14 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// Save to PostgreSQL via service layer
+	// Save to PostgreSQL via service layer (hashes password)
 	if err := services.RegisterUser(&newUser); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user: " + err.Error()})
 		return
 	}
+
+	// Hide password hash in response
+	newUser.Password = ""
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User registered successfully!",
@@ -39,7 +42,29 @@ func RegisterUser(c *gin.Context) {
 	})
 }
 
-// 3. READ: Get all registered users
+// 3. AUTH: User Login (verifies password and issues JWT token)
+func Login(c *gin.Context) {
+	var loginReq models.LoginRequest
+
+	if err := c.ShouldBindJSON(&loginReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, user, err := services.LoginUser(loginReq)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful!",
+		"token":   token,
+		"user":    user,
+	})
+}
+
+// 4. READ: Get all registered users (Protected)
 func GetAllUsers(c *gin.Context) {
 	users, err := services.GetAllUser()
 	if err != nil {
@@ -50,9 +75,8 @@ func GetAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// 4. READ: Get a single user by ID
+// 5. READ: Get a single user by ID (Protected)
 func GetUserByID(c *gin.Context) {
-	// Waiter 'c' extracts the URL parameter (e.g., /users/:id -> id)
 	id := c.Param("id")
 
 	user, err := services.GetUserById(id)
@@ -64,12 +88,11 @@ func GetUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// 5. UPDATE: Edit existing user information
+// 6. UPDATE: Edit existing user information (Protected)
 func UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	var updatedData models.User
 
-	// Validate the updated fields from JSON body
 	if err := c.ShouldBindJSON(&updatedData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -87,7 +110,7 @@ func UpdateUser(c *gin.Context) {
 	})
 }
 
-// 6. DELETE: Remove a user by ID
+// 7. DELETE: Remove a user by ID (Protected)
 func DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 
