@@ -3,22 +3,27 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"golang-starter/registration/handlers"
+	"golang-starter/registration/middleware"
 )
 
-// SetupRoutes registers all URL endpoints to their respective handlers (like Django urls.py)
 func SetupRoutes(router *gin.Engine) {
-	// Group all endpoints under /api/v1 (standard REST API convention)
+	// Groups all endpoints under /api/v1 
 	api := router.Group("/api/v1")
 	{
-		// 1. Welcome Greeting
+		// 1. PUBLIC ROUTES
 		api.GET("/welcome", handlers.Welcome)
+		api.POST("/users", handlers.RegisterUser) // Registration (Signup)
+		api.POST("/login", handlers.Login)        // Login (returns JWT Token)
 
-		// 2. User CRUD Endpoints
-		api.POST("/users", handlers.RegisterUser)       // Create
-		api.GET("/users", handlers.GetAllUsers)         // Read all
-		api.GET("/users/:id", handlers.GetUserByID)     // Read by ID
-		api.PUT("/users/:id", handlers.UpdateUser) 
-		api.PATCH("/users/:id",handlers.UpdateUser)     // Update
-		api.DELETE("/users/:id", handlers.DeleteUser)   // Delete
+		// 2. PROTECTED ROUTES 
+		protected := api.Group("/")
+		protected.Use(middleware.JWTMiddleware())
+		{
+			protected.GET("/users", handlers.GetAllUsers)         // Read all
+			protected.GET("/users/:id", handlers.GetUserByID)     // Read by ID
+			protected.PUT("/users/:id", handlers.UpdateUser)      // Update
+			protected.PATCH("/users/:id", handlers.UpdateUser)    // Partial Update
+			protected.DELETE("/users/:id", handlers.DeleteUser)   // Delete
+		}
 	}
 }
