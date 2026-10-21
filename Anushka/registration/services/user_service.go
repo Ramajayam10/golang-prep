@@ -1,24 +1,28 @@
 package services
 
 import (
-	"errors"
-
-	"golang.org/x/crypto/bcrypt"
 	"golang-starter/registration/config"
 	"golang-starter/registration/models"
 	"golang-starter/registration/utils"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // RegisterUser hashes password and saves new user record
 func RegisterUser(user *models.User) error {
-	// 1. Hash the plain-text password securely with bcrypt
+	// Check eligibility
+	if !user.IsEligible() {
+		return utils.ErrIneligibleUser
+	}
+
+	// Hash the plain-text password securely with bcrypt
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 	user.Password = string(hashedPassword)
 
-	// 2. Insert into PostgreSQL
+	// Insert into PostgreSQL
 	result := config.DB.Create(user)
 	return result.Error
 }
@@ -29,18 +33,18 @@ func LoginUser(req models.LoginRequest) (string, models.User, error) {
 
 	// 1. Check if user with this email exists
 	if err := config.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
-		return "", user, errors.New("invalid email or password")
+		return "", user, utils.ErrInvalidCredentials
 	}
 
 	// 2. Compare the plain-text password with the hashed password in PostgreSQL
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		return "", user, errors.New("invalid email or password")
+		return "", user, utils.ErrInvalidCredentials
 	}
 
 	// 3. Password matches! Generate JWT token
 	token, err := utils.GenerateToken(user.ID, user.Email)
 	if err != nil {
-		return "", user, errors.New("failed to generate authentication token")
+		return "", user, utils.ErrTokenGeneration
 	}
 
 	// Remove password hash from returned object for security
