@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"golang-starter/myutil"
+	stringpractice "golang-starter/string_practice"
 )
 
 func main() {
@@ -23,4 +24,13 @@ func main() {
 
 	company := "Sunware Technologies"
 	fmt.Println(company)
+
+	result := stringpractice.ReplaceChar("Rum", 'M')
+	fmt.Println(result)
+
+	var userInput string
+	fmt.Print("Enter a word: ")
+	fmt.Scan(&userInput)
+	bytes, chars := stringpractice.CountState(userInput)
+	fmt.Printf("For '%s' -> Bytes: %d, Characters: %d\n", userInput, bytes, chars)
 }
