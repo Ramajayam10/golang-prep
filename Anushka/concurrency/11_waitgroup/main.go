@@ -6,38 +6,29 @@ import (
 	"time"
 )
 
-func task1(wg *sync.WaitGroup) {
-	defer wg.Done()
+// One single function reused by all goroutines!
+func sendEmail(userName string, wg *sync.WaitGroup) {
+	defer wg.Done() // Step 3: When this function finishes, decrement counter (-1)
 
-	fmt.Println("Task 1 started")
-	time.Sleep(2 * time.Second)
-	fmt.Println("Task 1 finished")
-}
-
-func task2(wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	fmt.Println("Task 2 started")
-	fmt.Println("Task 2 finished")
-}
-
-func task3(wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	fmt.Println("Task 3 started")
-	fmt.Println("Task 3 finished")
+	fmt.Printf("Sending welcome email to %s...\n", userName)
+	time.Sleep(1 * time.Second) // Simulating network email sending
+	fmt.Printf(" Email successfully sent to %s!\n", userName)
 }
 
 func main() {
 	var wg sync.WaitGroup
 
-	wg.Add(3)
+	users := []string{"Anushka", "Rahul", "Priya"}
 
-	go task1(&wg)
-	go task2(&wg)
-	go task3(&wg)
+	fmt.Println("Starting email blast...")
 
+	for _, name := range users {
+		wg.Add(1)               // Step 1: Add +1 to counter for each person
+		go sendEmail(name, &wg) // Step 2: Launch in background
+	}
+
+	// Step 4: Freeze main() right here until counter reaches 0!
 	wg.Wait()
 
-	fmt.Println("All tasks done!")
+	fmt.Println(" All welcome emails have been sent! Process finished.")
 }

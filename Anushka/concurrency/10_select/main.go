@@ -6,28 +6,30 @@ import (
 )
 
 func main() {
-	ch1 := make(chan string)
-	ch2 := make(chan string)
+	uberCh := make(chan string)
+	olaCh := make(chan string)
 
+	// Uber driver is searching (takes 3 seconds)
 	go func() {
-		time.Sleep(1 * time.Second)
-		ch1 <- "Message from channel 1"
+		time.Sleep(3 * time.Second)
+		uberCh <- " Uber driver accepted!"
 	}()
 
+	// Ola driver is searching (takes 1 second)
 	go func() {
-		time.Sleep(2 * time.Second)
-		ch2 <- "Message from channel 2"
+		time.Sleep(5 * time.Second)
+		olaCh <- " Ola driver accepted!"
 	}()
 
-	for i := 0; i < 2; i++ {
-		select {
-		case msg := <-ch1:
-			fmt.Println(msg)
+	// SELECT: Listens to ALL cases at the exact same time!
+	select {
+	case cab := <-uberCh:
+		fmt.Println("RIDE CONFIRMED:", cab)
 
-		case msg := <-ch2:
-			fmt.Println(msg)
-		}
+	case cab := <-olaCh:
+		fmt.Println("RIDE CONFIRMED:", cab)
+
+	case <-time.After(2 * time.Second):
+		fmt.Println(" TIMEOUT: No drivers found within 2 seconds. Cancelling request!")
 	}
-
-	fmt.Println("Finished")
 }
